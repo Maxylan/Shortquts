@@ -10,9 +10,35 @@ CQ_INIT=false
 # Shortcuts
 declare -a CQS=()
 
+# Init / Create missing files
+function cqinit() {
+    test $CQ_INIT = true && return
+
+    if [ ! -d "$CQ_STORAGE" ]; then
+        mkdir -p -m 774 "$CQ_STORAGE"
+        echo -e "${CQ_PREFIX}Created missing '\e]8;;file:/$CQ_STORAGE\a$CQ_STORAGE\e]8;;\a'"
+    fi
+
+    if [ ! -f "$CQ_CACHE" ]; then
+        touch "$CQ_CACHE" 
+        echo -e "${CQ_PREFIX}Created missing '\e]8;;file:/$CQ_CACHE\a$CQ_CACHE\e]8;;\a'"
+    fi
+
+    if [ -f "$CQ_CACHE" ]; then
+        while IFS="" read -r line || [ -n "$line" ]
+        do
+            CQS+=("$line")
+        done < "$CQ_CACHE"
+    else
+        return 2
+    fi
+
+    CQ_INIT=true
+}
+
 function cq {
     # Add a shortcut
-    function addcq {
+    function cqadd {
         if [ -z ${1+x} ]; then
             return 1
         fi
@@ -25,39 +51,13 @@ function cq {
             *) CQS=("$NEW" "${CQS[0]}" "${CQS[1]}") ;;
         esac
 
-        # Only writes to $CQ_CACHE if initialized
+        # Only writes to $CQ_CACHE if initialized - MO
         if $CQ_INIT; then
             true > "$CQ_CACHE"
             for shortcut in "${CQS[@]}"; do
                 echo "$shortcut" >> "$CQ_CACHE"
             done
         fi
-    }
-
-    # Init / Create missing files
-    function cqinit() {
-        test $CQ_INIT = true && return
-
-        if [ ! -d "$CQ_STORAGE" ]; then
-            mkdir -p -m 774 "$CQ_STORAGE"
-            echo -e "${CQ_PREFIX}Created missing '\e]8;;file:/$CQ_STORAGE\a$CQ_STORAGE\e]8;;\a'"
-        fi
-
-        if [ ! -f "$CQ_CACHE" ]; then
-            touch "$CQ_CACHE" 
-            echo -e "${CQ_PREFIX}Created missing '\e]8;;file:/$CQ_CACHE\a$CQ_CACHE\e]8;;\a'"
-        fi
-
-        if [ -f "$CQ_CACHE" ]; then
-            while IFS="" read -r line || [ -n "$line" ]
-            do
-                addcq "$line"
-            done < "$CQ_CACHE"
-        else
-            return 2
-        fi
-
-        CQ_INIT=true
     }
 
     # Goto arg 1
@@ -86,7 +86,7 @@ function cq {
                 DIR="$(pwd)"
 
                 if [ ${#CQS[@]} -eq 0 ] || [ "$DIR" != "${CQS[0]}" ]; then
-                    addcq "$DIR"
+                    cqadd "$DIR"
                     echo -e "${CQ_PREFIX}Primary shortcut changed to '\e]8;;file:/${CQS[0]}\a${CQS[0]}\e]8;;\a'"
                 fi
             else
@@ -103,7 +103,7 @@ function cq {
 
         if [ ${#CQS[@]} -eq 0 ] || [ -z ${CQS[0]+x} ]; then
             cd "$CQ_DEFAULT" || return 6
-            addcq "$(pwd)"
+            cqadd "$(pwd)"
             echo -e "${CQ_PREFIX}Primary shortcut \033[1mreset\033[0m to '\e]8;;file:/${CQS[0]}\a${CQS[0]}\e]8;;\a'"
         elif [ -d "${CQS[0]}" ]; then
             local DIR
@@ -120,7 +120,7 @@ function cq {
                 echo -e "${CQ_PREFIX}Returned to '\e]8;;file:/${CQS[2]}\a${CQS[2]}\e]8;;\a'"
             else
                 cd "$CQ_DEFAULT" || return 10
-                addcq "$(pwd)"
+                cqadd "$(pwd)"
                 echo -e "${CQ_PREFIX}Primary shortcut \033[1mreset\033[0m to '\e]8;;file:/${CQS[0]}\a${CQS[0]}\e]8;;\a'"
             fi
         else
@@ -153,9 +153,12 @@ function cqreset {
     CQ_INIT=false
 }
 
+## Optional aliases, for convenience
 alias cq~="cq ~"
 alias cq-="cq -"
+alias cqi="cqinit"
+# alias cq-init="cqinit"
 alias cql="cqlist"
-alias cq-list="cqlist"
+# alias cq-list="cqlist"
 alias cqr="cqreset"
-alias cq-reset="cqreset"
+# alias cq-reset="cqreset"
