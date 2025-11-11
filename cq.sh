@@ -4,7 +4,7 @@
 CQ_STORAGE="$HOME/.local/state/cq"
 CQ_CACHE="$CQ_STORAGE/.cache"
 CQ_PREFIX="'\033[1mcq\033[0m' - "
-CQ_DEFAULT="$HOME/aeb/projects"
+CQ_DEFAULT="$HOME"
 CQ_INIT=false
 
 # Shortcuts
@@ -75,6 +75,7 @@ function cq {
                 case "$NEW" in
                     "1") test ${#CQS[@]} -gt 1 && NEW="${CQS[1]}" ;;
                     "2") test ${#CQS[@]} -gt 2 && NEW="${CQS[2]}" ;;
+                    "-") NEW="$CQ_DEFAULT" ;;
                     *) gotocq; return ;;
                 esac
             fi
@@ -131,3 +132,30 @@ function cq {
 
     cqcd "${1}"
 }
+
+function cqlist {
+    cqinit
+
+    test $CQ_INIT = false && return 12
+
+    if $CQ_INIT; then
+        echo -e "${CQ_PREFIX}Shortcut history\n"
+
+        for shortcut in "${CQS[@]}"; do
+            echo "$shortcut"
+        done
+    fi
+}
+
+function cqreset {
+    test $CQ_INIT = false && return 13
+    echo -e "${CQ_PREFIX}Re-initializing.."
+    CQ_INIT=false
+}
+
+alias cq~="cq ~"
+alias cq-="cq -"
+alias cql="cqlist"
+alias cq-list="cqlist"
+alias cqr="cqreset"
+alias cq-reset="cqreset"
