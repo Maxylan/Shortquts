@@ -25,6 +25,8 @@ function cqinit() {
     fi
 
     if [ -f "$CQ_CACHE" ]; then
+        CQS=()
+
         while IFS="" read -r line || [ -n "$line" ]
         do
             CQS+=("$line")
@@ -130,10 +132,12 @@ function cq {
         fi
     }
 
+    CQ_INIT=false
     cqcd "${1}"
 }
 
 function cqlist {
+    CQ_INIT=false
     cqinit
 
     test $CQ_INIT = false && return 12
@@ -151,14 +155,18 @@ function cqreset {
     test $CQ_INIT = false && return 13
     echo -e "${CQ_PREFIX}Re-initializing.."
     CQ_INIT=false
+    cqinit
 }
 
 ## Optional aliases, for convenience
 alias cq~="cq ~"
 alias cq-="cq -"
+alias cq0="cq 0"
+alias cq1="cq 1"
+alias cq2="cq 2"
 alias cqi="cqinit"
 # alias cq-init="cqinit"
-alias cql="cqlist"
-# alias cq-list="cqlist"
 alias cqr="cqreset"
 # alias cq-reset="cqreset"
+alias cql="cqlist"
+# alias cq-list="cqlist"
